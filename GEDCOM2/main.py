@@ -81,7 +81,94 @@ with open(path, "r") as file:
                 if tag == 'DATE':
                     currFamily['DIV']['DIVDATE'] = ' '.join(parts[2:])
 
+def isDateBeforeCurr(date):
+    if date:
+        dateObj = datetime.strptime(date, "%d %b %Y")
+        currDate = datetime.today()
+        return dateObj< currDate
+    return True
 
+def datesBeforeCurrent(individuals, families):
+    for individual in individuals:
+        bd = individual.get('BIRTH', {}).get('BDATE', '')
+        dd = individual.get('DEATH', {}).get('DDATE', '')
+        if not (isDateBeforeCurr(bd) and isDateBeforeCurr(dd)):
+            print("Date after current")
+            return False
+
+    for family in families:
+        md = family.get('MARR', {}).get('MDATE', '')
+        divD = family.get('DIV', {}).get('DIVDATE', '')
+        if not (isDateBeforeCurr(md) and isDateBeforeCurr(divD)):
+            print("Date after current")
+            return False
+    print("All dates before current")
+    return True
+
+def birthBeforeMarriage(individuals, families):
+    md = family.get('MARR', {}).get('MDATE', '')
+    bd = individual.get('BIRTH', {}).get('BDATE', '')
+    if md and bd:
+
+        if md > bd:
+            return True
+    return False
+
+class testBirthBeforeMarraige(unittest.TestCase):
+    def setUp(self):
+        self.individual1 = {
+            'BIRTH': {'BDATE': '01 JAN 1980'},
+            'MARR': {'MDATE': '01 JAN 2020'}
+        }
+        self.individual2 = {
+            'BIRTH': {'BDATE': '01 JAN 1990'},
+            'MARR': {'MDATE': '01 JAN 2000'}
+        }
+        self.individual3 = {
+            'BIRTH': {'BDATE': ''},
+            'MARR': {'MDATE': ''}
+        }
+        self.individual4 = {
+            'BIRTH': {'BDATE': ''},
+            'MARR': {'MDATE': '01 JAN 2020'}
+        }
+        self.individual5 = {
+            'BIRTH': {'BDATE': '01 JAN 1990'},
+            'MARR': {'MDATE': ''}
+        }
+
+    def testBirthBeforeMarraige(self):
+        self.assertFalse(birthBeforeMarriage(self.individual1, self.individual1))
+        self.assertFalse(birthBeforeMarriage(self.individual2, self.individual2))
+
+    def testBirthAndMarraigeDateMissing(self):
+        # Test when both birth and death dates are missing
+        self.assertFalse(birthBeforeMarriage(self.individual3, self.individual3))
+
+    def testBirthOrMarraigeDateMissing(self):
+        # Test when either birth or death date is missing
+        self.assertFalse(birthBeforeMarriage(self.individual4, self.individual4))
+        self.assertFalse(birthBeforeMarriage(self.individual5, self.individual5))
+
+    def testMarraigeBeforeBirth(self):
+        # Test when death occurs before birth
+        individual = {
+            'BIRTH': {'BDATE': '01 JAN 2020'},
+            'MARR': {'MDATE': '01 JAN 1990'}
+        }
+        self.assertFalse(birthBeforeMarriage(individual, individual))
+
+    def testSameBirthAndDeathDate(self):
+        # Test when an individual's birth and death dates are the same
+        individual = {
+            'BIRTH': {'BDATE': '01 JAN 2000'},
+            'MARR': {'MDATE': '01 JAN 2000'}
+        }
+        self.assertFalse(birthBeforeMarriage(individual, individual))
+
+
+
+datesBeforeCurrent(individuals,families)
 def calcAge(birth, death):
     reference = datetime.today()
     birth = datetime.strptime(birth, "%d %b %Y")
@@ -251,6 +338,6 @@ else:
     print("US04: Marriage before divorce - Some families have invalid marriage and divorce dates.")
 
 #unittest functionality for US03
+'''
 if __name__ == '__main__':
     unittest.main()
-'''
