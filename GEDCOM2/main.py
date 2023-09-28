@@ -10,7 +10,7 @@ families = []
 currIndividual = {}
 currFamily = {}
 
-path = '/Users/trevormckay/Documents/GitHub/CS555GroupTwo/GEDCOM2/GEDCOMTestFile'
+path = 'GEDCOMTestFile'
 
 with open(path, "r") as file:
     for line in file:
@@ -154,6 +154,20 @@ class US03Test(unittest.TestCase):
         }
         self.assertFalse(US03(individual))
 
+def US04(families):
+    for family in families:
+        marriage_date = family.get('MARR', {}).get('MDATE', '')
+        divorce_date = family.get('DIV', {}).get('DIVDATE', '')
+
+        if marriage_date and divorce_date:
+            marriage_date_obj = datetime.strptime(marriage_date, "%d %b %Y")
+            divorce_date_obj = datetime.strptime(divorce_date, "%d %b %Y")
+
+            if marriage_date_obj > divorce_date_obj:
+                return False
+
+    return True
+
 if currFamily not in families:
     families.append(currFamily)
 
@@ -227,5 +241,16 @@ for family in families:
             childrenID += char
     print("{:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} ".format(family1, marraigeDate, divorceDate, husbandID, husbandName, wifeID, wifeName, childrenID))
 
+'''
+#US04 test
+is_valid = US04(families)
+
+if is_valid:
+    print("US04: Marriage before divorce - All families have valid marriage and divorce dates.")
+else:
+    print("US04: Marriage before divorce - Some families have invalid marriage and divorce dates.")
+
+#unittest functionality for US03
 if __name__ == '__main__':
     unittest.main()
+'''
