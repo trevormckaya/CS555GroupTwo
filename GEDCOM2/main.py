@@ -1,6 +1,7 @@
 # I pledge my honor that I have abided by the Stevens Honor System - Corey Heckel, Trevor McKay
 from typing import List
 from datetime import datetime
+import unittest
 
 tags: List[str] = ['0 INDI', '1 NAME', '1 SEX', '1 BIRT', '1 DEAT', '1 FAMC', '1 FAMS', '1 FAM', '1 MARR', '1 HUSB', '1 WIFE', '1 CHIL', '1 DIV', '2 DATE', '0 HEAD', '0 TRLR', '0 NOTE']
 
@@ -9,7 +10,7 @@ families = []
 currIndividual = {}
 currFamily = {}
 
-path = 'GEDCOMTestFile'
+path = '/Users/trevormckay/Documents/GitHub/CS555GroupTwo/GEDCOM2/GEDCOMTestFile'
 
 with open(path, "r") as file:
     for line in file:
@@ -92,6 +93,66 @@ def calcAge(birth, death):
         currAge = reference.year - birth.year - ((reference.month, reference.day) < (birth.month, birth.day))
         return currAge
 
+def US03(individual):
+    bd = individual.get('BIRTH', {}).get('BDATE', '')
+    dd = individual.get('DEATH', {}).get('DDATE', '')
+
+    if bd and dd:
+        bd = datetime.strptime(bd, "%d %b %Y")
+        dd = datetime.strptime(dd, "%d %b %Y")
+        return bd < dd
+    return True
+class US03Test(unittest.TestCase):
+    def setUp(self):
+        self.individual1 = {
+            'BIRTH': {'BDATE': '01 JAN 1980'},
+            'DEATH': {'DDATE': '01 JAN 2020'}
+        }
+        self.individual2 = {
+            'BIRTH': {'BDATE': '01 JAN 1990'},
+            'DEATH': {'DDATE': '01 JAN 2000'}
+        }
+        self.individual3 = {
+            'BIRTH': {'BDATE': '01 JAN 2000'},
+            'DEATH': {'DDATE': ''}
+        }
+        self.individual4 = {
+            'BIRTH': {'BDATE': ''},
+            'DEATH': {'DDATE': '01 JAN 2020'}
+        }
+        self.individual5 = {
+            'BIRTH': {'BDATE': '01 JAN 1990'},
+            'DEATH': {'DDATE': ''}
+        }
+
+    def test_birth_before_death(self):
+        self.assertTrue(US03(self.individual1))
+        self.assertTrue(US03(self.individual2))
+
+    def test_birth_and_death_dates_missing(self):
+        # Test when both birth and death dates are missing
+        self.assertTrue(US03(self.individual3))
+
+    def test_birth_or_death_date_missing(self):
+        # Test when either birth or death date is missing
+        self.assertTrue(US03(self.individual4))
+        self.assertTrue(US03(self.individual5))
+
+    def test_death_before_birth(self):
+        # Test when death occurs before birth
+        individual = {
+            'BIRTH': {'BDATE': '01 JAN 2020'},
+            'DEATH': {'DDATE': '01 JAN 1990'}
+        }
+        self.assertFalse(US03(individual))
+
+    def test_same_birth_and_death_date(self):
+        # Test when an individual's birth and death dates are the same
+        individual = {
+            'BIRTH': {'BDATE': '01 JAN 2000'},
+            'DEATH': {'DDATE': '01 JAN 2000'}
+        }
+        self.assertFalse(US03(individual))
 
 if currFamily not in families:
     families.append(currFamily)
@@ -165,3 +226,6 @@ for family in families:
         if char.isdigit():
             childrenID += char
     print("{:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} ".format(family1, marraigeDate, divorceDate, husbandID, husbandName, wifeID, wifeName, childrenID))
+
+if __name__ == '__main__':
+    unittest.main()
