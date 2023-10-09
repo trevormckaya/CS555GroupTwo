@@ -351,6 +351,47 @@ def US04(families):
     print("All marriage dates are before divorce dates")
     return True
 
+def US07_check_age(individuals):
+    for individual in individuals:
+        birth_date_str = individual.get('BIRTH', {}).get('BDATE', '')
+        death_date_str = individual.get('DEATH', {}).get('DDATE', '')
+
+        if birth_date_str:
+            birth_date = datetime.strptime(birth_date_str, "%d %b %Y")
+            if death_date_str:
+                death_date = datetime.strptime(death_date_str, "%d %b %Y")
+                age_at_death = death_date.year - birth_date.year - ((death_date.month, death_date.day) < (birth_date.month, birth_date.day))
+                if age_at_death >= 150:
+                    return False
+            else:
+                current_date = datetime.today()
+                age_at_current = current_date.year - birth_date.year - ((current_date.month, current_date.day) < (birth_date.month, birth_date.day))
+                if age_at_current >= 150:
+                    return False
+    return True
+
+
+def US08_check_birth_before_marriage(families, individuals):
+    for family in families:
+        marriage_date_str = family.get('MARR', {}).get('MDATE', '')
+        divorce_date_str = family.get('DIV', {}).get('DIVDATE', '')
+        children_ids = family.get('CHIL', '')
+
+        if marriage_date_str:
+            marriage_date = datetime.strptime(marriage_date_str, "%d %b %Y")
+            for child_id in children_ids:
+                child = individuals[int(child_id) - 1]
+                birth_date_str = child.get('BIRTH', {}).get('BDATE', '')
+                if birth_date_str:
+                    birth_date = datetime.strptime(birth_date_str, "%d %b %Y")
+                    if birth_date < marriage_date:
+                        return False
+                    if divorce_date_str:
+                        divorce_date = datetime.strptime(divorce_date_str, "%d %b %Y")
+                        if (birth_date - marriage_date).days > 270:  # Check if birth is more than 9 months after divorce
+                            return False
+    return True
+
 if currFamily not in families:
     families.append(currFamily)
 
