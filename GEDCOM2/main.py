@@ -85,8 +85,9 @@ def isDateBeforeCurr(date):
     if date:
         dateObj = datetime.strptime(date, "%d %b %Y")
         currDate = datetime.today()
-        return dateObj< currDate
+        return dateObj < currDate
     return True
+
 
 def datesBeforeCurrent(individuals, families):
     for individual in individuals:
@@ -105,27 +106,22 @@ def datesBeforeCurrent(individuals, families):
     print("All dates before current")
     return True
 
+def compareDates(date1, date2):
+    if date1 and date2:
+        dateObj1 = datetime.strptime(date1, "%d %b %Y")
+        dateObj2 = datetime.strptime(date2, "%d %b %Y")
+        return dateObj1 < dateObj2
+    return True
+
 def birthBeforeMarriage(individuals, families):
-    md = family.get('MARR', {}).get('MDATE', '')
     bd = individual.get('BIRTH', {}).get('BDATE', '')
-    if md and bd:
-
-        if md > bd:
-            return True
-    print("All birth dates before marriage")
-    return False
-
-
+    md = family.get('MARR', {}).get('MDATE', '')
+    return compareDates(bd, md)
 
 def divorceBeforeDeath(individuals, families):
     divd = family.get('DIV', {}).get('DIVDATE', '')
     dd = individual.get('DEATH', {}).get('DDATE', '')
-    if divd and dd:
-
-        if divd < dd:
-            return True
-    print("All divorce dates before death")
-    return False
+    return compareDates(divd, dd)
 
 class testDivBeforeDeath(unittest.TestCase):
     def setUp(self):
@@ -150,28 +146,23 @@ class testDivBeforeDeath(unittest.TestCase):
             'DIV': {'DIVDATE': ''}
         }
     def testDivBeforeDeath(self):
-        self.assertFalse(divorceBeforeDeath(self.individual1, self.individual1))
-        self.assertFalse(divorceBeforeDeath(self.individual2, self.individual2))
+        self.assertTrue(divorceBeforeDeath(self.individual1, self.individual1))
+        self.assertTrue(divorceBeforeDeath(self.individual2, self.individual2))
 
     def testDivBeforeDeathBothDatesMissing(self):
         # Test when both birth and death dates are missing
-        self.assertFalse(divorceBeforeDeath(self.individual3, self.individual3))
+        self.assertTrue(divorceBeforeDeath(self.individual3, self.individual3))
 
     def testDivBeforeDeathDateMissing(self):
         # Test when either birth or death date is missing
-        self.assertFalse(divorceBeforeDeath(self.individual4, self.individual4))
-        self.assertFalse(divorceBeforeDeath(self.individual5, self.individual5))
+        self.assertTrue(divorceBeforeDeath(self.individual4, self.individual4))
+        self.assertTrue(divorceBeforeDeath(self.individual5, self.individual5))
 
 
 def marriageBeforeDeath(individuals, families):
     md = family.get('MARR', {}).get('MDATE', '')
     dd = individual.get('DEATH', {}).get('DDATE', '')
-    if md and dd:
-
-        if md < dd:
-            return True
-    print("All marriage dates before death")
-    return False
+    return compareDates(md, dd)
 
 class testMarraigeBeforeDeath(unittest.TestCase):
     def setUp(self):
@@ -196,20 +187,20 @@ class testMarraigeBeforeDeath(unittest.TestCase):
             'MARR': {'MDATE': ''}
         }
     def testMarriageBeforeDeath(self):
-        self.assertFalse(marriageBeforeDeath(self.individual1, self.individual1))
-        self.assertFalse(marriageBeforeDeath(self.individual2, self.individual2))
+        self.assertTrue(marriageBeforeDeath(self.individual1, self.individual1))
+        self.assertTrue(marriageBeforeDeath(self.individual2, self.individual2))
 
     def testMarriageBeforeDeathBothDatesMissing(self):
         # Test when both birth and death dates are missing
-        self.assertFalse(marriageBeforeDeath(self.individual3, self.individual3))
+        self.assertTrue(marriageBeforeDeath(self.individual3, self.individual3))
 
     def testMarriageBeforeDeathDateMissing(self):
         # Test when either birth or death date is missing
-        self.assertFalse(marriageBeforeDeath(self.individual4, self.individual4))
-        self.assertFalse(marriageBeforeDeath(self.individual5, self.individual5))
+        self.assertTrue(marriageBeforeDeath(self.individual4, self.individual4))
+        self.assertTrue(marriageBeforeDeath(self.individual5, self.individual5))
 
 
-class testBirthBeforeMarraige(unittest.TestCase):
+class testBirthBeforeMarriage(unittest.TestCase):
     def setUp(self):
         self.individual1 = {
             'BIRTH': {'BDATE': '01 JAN 1980'},
@@ -232,20 +223,20 @@ class testBirthBeforeMarraige(unittest.TestCase):
             'MARR': {'MDATE': ''}
         }
 
-    def testBirthBeforeMarraige(self):
+    def testBirthBeforeMarriage(self):
         self.assertFalse(birthBeforeMarriage(self.individual1, self.individual1))
         self.assertFalse(birthBeforeMarriage(self.individual2, self.individual2))
 
-    def testBirthAndMarraigeDateMissing(self):
+    def testBirthAndMarriageDateMissing(self):
         # Test when both birth and death dates are missing
         self.assertFalse(birthBeforeMarriage(self.individual3, self.individual3))
 
-    def testBirthOrMarraigeDateMissing(self):
+    def testBirthOrMarriageDateMissing(self):
         # Test when either birth or death date is missing
         self.assertFalse(birthBeforeMarriage(self.individual4, self.individual4))
         self.assertFalse(birthBeforeMarriage(self.individual5, self.individual5))
 
-    def testMarraigeBeforeBirth(self):
+    def testMarriageBeforeBirth(self):
         # Test when death occurs before birth
         individual = {
             'BIRTH': {'BDATE': '01 JAN 2020'},
@@ -434,14 +425,14 @@ for individual in individuals:
 
 print("Families:")
 
-print("{:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} ".format("ID", "Marraige Date", "Divorce Date", "Husband ID", "Husband Name", "Wife ID", "Wife Name", "Children ID"))
+print("{:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} ".format("ID", "Marriage Date", "Divorce Date", "Husband ID", "Husband Name", "Wife ID", "Wife Name", "Children ID"))
 for family in families:
     family1 = family.get('FAM', '')
     familyID = ''
     for char in family1:
         if char.isdigit():
             familyID += char
-    marraigeDate = family.get('MARR', {}).get('MDATE', '')
+    marriageDate = family.get('MARR', {}).get('MDATE', '')
     divorceDate = family.get('DIV', {}).get('DIVDATE', '')
 
     husband = family.get('HUSB', '')
@@ -463,7 +454,7 @@ for family in families:
     for char in children:
         if char.isdigit():
             childrenID += char
-    print("{:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} ".format(family1, marraigeDate, divorceDate, husbandID, husbandName, wifeID, wifeName, childrenID))
+    print("{:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} {:<20} ".format(family1, marriageDate, divorceDate, husbandID, husbandName, wifeID, wifeName, childrenID))
 birthBeforeMarriage(individuals, families)
 datesBeforeCurrent(individuals, families)
 US04(families)
