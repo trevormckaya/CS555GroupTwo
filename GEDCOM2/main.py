@@ -473,5 +473,55 @@ else:
 
 #unittest functionality for US03
 '''
+class TestUS07CheckAge(unittest.TestCase):
+    def setUp(self):
+        # Initialize test data
+        self.individual1 = {
+            'BIRTH': {'BDATE': '01 JAN 1980'},
+            'DEATH': {'DDATE': '01 JAN 2020'}
+        }
+        self.individual2 = {
+            'BIRTH': {'BDATE': '01 JAN 1990'},
+            'DEATH': {'DDATE': '01 JAN 2000'}
+        }
+
+    def test_age_valid(self):
+        # Test cases with valid ages
+        self.assertTrue(US07_check_age([self.individual1]))
+        self.assertTrue(US07_check_age([self.individual2]))
+
+    def test_age_missing_death(self):
+        # Test cases with missing death date
+        self.assertTrue(US07_check_age([self.individual1]))
+
+    def test_age_missing_birth(self):
+        # Test cases with missing birth date
+        self.assertTrue(US07_check_age([self.individual2]))
+
+    def test_age_invalid(self):
+        # Test cases with invalid ages
+        self.assertFalse(US07_check_age([self.individual1, self.individual2]))
+
+class TestUS08CheckBirthBeforeMarriage(unittest.TestCase):
+    def setUp(self):
+        # Initialize test data
+        self.family1 = {
+            'MARR': {'MDATE': '01 JAN 2020'},
+            'DIV': {'DIVDATE': '01 JAN 2021'},
+            'CHIL': ['1', '2', '3']
+        }
+        self.family2 = {
+            'MARR': {'MDATE': '01 JAN 2020'},
+            'CHIL': ['4', '5']
+        }
+
+    def test_birth_before_marriage_valid(self):
+        # Test cases with valid birth before marriage
+        self.assertTrue(US08_check_birth_before_marriage([self.family1], individuals))
+
+    def test_birth_before_marriage_invalid(self):
+        # Test cases with birth after marriage
+        self.assertFalse(US08_check_birth_before_marriage([self.family2], individuals))
+
 if __name__ == '__main__':
     unittest.main()
