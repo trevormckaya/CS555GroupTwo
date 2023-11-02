@@ -10,7 +10,7 @@ families = []
 currIndividual = {}
 currFamily = {}
 
-path = '/Users/trevormckay/Documents/GitHub/CS555GroupTwo/GEDCOM2/GEDCOMTestFile'
+path = 'GEDCOMTestFile'
 
 with open(path, "r") as file:
     for line in file:
@@ -80,6 +80,135 @@ with open(path, "r") as file:
             elif 'DIV' in currFamily:
                 if tag == 'DATE':
                     currFamily['DIV']['DIVDATE'] = ' '.join(parts[2:])
+def is_marriage_after_14(individuals, families):
+    for family in families:
+        marriage_date_str = family.get('MARR', {}).get('MDATE', '')
+        husband_id = family.get('HUSB', '')
+        wife_id = family.get('WIFE', '')
+
+        if marriage_date_str and husband_id and wife_id:
+            marriage_date = datetime.strptime(marriage_date_str, "%d %b %Y")
+
+            # Check husband's age at marriage
+            husband = individuals[int(husband_id) - 1]
+            birth_date_husband_str = husband.get('BIRTH', {}).get('BDATE', '')
+            if birth_date_husband_str:
+                birth_date_husband = datetime.strptime(birth_date_husband_str, "%d %b %Y")
+                age_at_marriage_husband = marriage_date.year - birth_date_husband.year - ((marriage_date.month, marriage_date.day) < (birth_date_husband.month, birth_date_husband.day))
+                if age_at_marriage_husband < 14:
+                    return False
+
+            # Check wife's age at marriage
+            wife = individuals[int(wife_id) - 1]
+            birth_date_wife_str = wife.get('BIRTH', {}).get('BDATE', '')
+            if birth_date_wife_str:
+                birth_date_wife = datetime.strptime(birth_date_wife_str, "%d %b %Y")
+                age_at_marriage_wife = marriage_date.year - birth_date_wife.year - ((marriage_date.month, marriage_date.day) < (birth_date_wife.month, birth_date_wife.day))
+                if age_at_marriage_wife < 14:
+                    return False
+
+    return True
+
+class TestIsMarriageAfter14(unittest.TestCase):
+    def setUp(self):
+        # Test data for individuals and families
+        self.individuals = [
+            {
+                'BIRTH': {'BDATE': '01 JAN 1990'},
+                'DEATH': {},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1976'},
+                'DEATH': {},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1960'},
+                'DEATH': {},
+            },
+        ]
+        self.families = [
+            {
+                'MARR': {'MDATE': '01 JAN 2010'},
+                'HUSB': '1',
+                'WIFE': '2',
+            },
+            {
+                'MARR': {'MDATE': '01 JAN 2022'},
+                'HUSB': '1',
+                'WIFE': '3',
+            },
+            {
+                'MARR': {'MDATE': '01 JAN 2025'},
+                'HUSB': '3',
+                'WIFE': '2',
+            }]
+
+    def test_marriage_after_14(self):
+        # Test marriages where both husband and wife are older than 14
+        self.assertTrue(is_marriage_after_14(self.individuals, self.families))
+
+    def test_marriage_with_underage_husband(self):
+        # Test marriage with an underage husband
+        self.individuals[0]['BIRTH']['BDATE'] = '01 JAN 2008'
+        self.assertFalse(is_marriage_after_14(self.individuals, self.families))
+
+    def test_marriage_with_underage_wife(self):
+        # Test marriage with an underage wife
+        self.individuals[1]['BIRTH']['BDATE'] = '01 JAN 2012'
+        self.assertFalse(is_marriage_after_14(self.individuals, self.families))
+
+    def test_marriage_with_both_underage(self):
+        # Test marriage with both husband and wife underage
+        self.individuals[0]['BIRTH']['BDATE'] = '01 JAN 2008'
+        self.individuals[1]['BIRTH']['BDATE'] = '01 JAN 2012'
+        self.assertFalse(is_marriage_after_14(self.individuals, self.families))
+
+
+def isBirthBeforeDeath(individuals):
+    for individual in individuals:
+        bd = individual.get('BIRTH', {}).get('BDATE', '')
+        dd = individual.get('DEATH', {}).get('DDATE', '')
+        dateBirthObj = datetime.strptime(bd, "%d %b %Y")
+        dateDeathObj = datetime.strptime(dd, "%d %b %Y")
+        return dateBirthObj < dateDeathObj
+class testDivBeforeDeath(unittest.TestCase):
+    def setUp(self):
+        self.individual1 = {
+            'DEATH': {'DDATE': '01 JAN 2022'},
+            'BIRTH': {'BDATE': '01 JAN 2020'}
+        }
+        self.individual2 = {
+            'DEATH': {'DDATE': '01 JAN 2010'},
+            'BIRTH': {'BDATE': '01 JAN 2000'}
+        }
+        self.individual3 = {
+            'DEATH': {'DDATE': ''},
+            'BIRTH': {'BDATE': ''}
+        }
+        self.individual4 = {
+            'DEATH': {'DDATE': ''},
+            'BIRTH': {'BDATE': '01 JAN 2020'}
+        }
+        self.individual5 = {
+            'DEATH': {'DDATE': '01 JAN 1990'},
+            'BIRTH': {'BDATE': ''}
+        }
+    def testBirthBeforeDeath(self):
+        self.assertTrue(isBirthBeforeDeath(self.individual1, self.individual1))
+        self.assertTrue(isBirthBeforeDeath(self.individual2, self.individual2))
+
+    def testBirthBeforeDeathBothDatesMissing(self):
+        # Test when both birth and death dates are missing
+        self.assertTrue(isBirthBeforeDeath(self.individual3, self.individual3))
+
+    def testBirthBeforeDeathDateMissing(self):
+        # Test when either birth or death date is missing
+        self.assertTrue(isBirthBeforeDeath(self.individual4, self.individual4))
+        self.assertTrue(isBirthBeforeDeath(self.individual5, self.individual5))
+
+
+
+
 
 def isDateBeforeCurr(date):
     if date:
