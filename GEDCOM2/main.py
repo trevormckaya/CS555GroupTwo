@@ -599,6 +599,167 @@ US03(individual)
 divorceBeforeDeath(individuals, families)
 marriageBeforeDeath(individuals,families)
 
+def US11(families):
+    marriages = {}
+    for family in families:
+        husband_id = family.get('HUSB', '')
+        wife_id = family.get('WIFE', '')
+        marriage_date = family.get('MARR', {}).get('MDATE', '')
+
+        if husband_id and wife_id and marriage_date:
+            if husband_id in marriages:
+                if marriages[husband_id] > marriage_date:
+                    return False
+            if wife_id in marriages:
+                if marriages[wife_id] > marriage_date:
+                    return False
+            marriages[husband_id] = marriage_date
+            marriages[wife_id] = marriage_date
+
+    return True
+
+class TestUS11(unittest.TestCase):
+    def test_no_bigamy(self):
+        # Test with no bigamy, all marriages are in order
+        families = [
+            {
+                'HUSB': '1',
+                'WIFE': '2',
+                'MARR': {'MDATE': '01 JAN 2000'},
+            },
+            {
+                'HUSB': '3',
+                'WIFE': '4',
+                'MARR': {'MDATE': '01 JAN 2010'},
+            },
+        ]
+        self.assertTrue(US11(families))
+
+    def test_bigamy_husband(self):
+        # Test with bigamy, husband has two marriages on the same date
+        families = [
+            {
+                'HUSB': '1',
+                'WIFE': '2',
+                'MARR': {'MDATE': '01 JAN 2000'},
+            },
+            {
+                'HUSB': '1',
+                'WIFE': '3',
+                'MARR': {'MDATE': '01 JAN 2000'},
+            },
+        ]
+        self.assertFalse(US11(families))
+
+    def test_bigamy_wife(self):
+        # Test with bigamy, wife has two marriages on the same date
+        families = [
+            {
+                'HUSB': '1',
+                'WIFE': '2',
+                'MARR': {'MDATE': '01 JAN 2000'},
+            },
+            {
+                'HUSB': '3',
+                'WIFE': '2',
+                'MARR': {'MDATE': '01 JAN 2000'},
+            },
+        ]
+        self.assertFalse(US11(families))
+
+def US12(individuals, families):
+    for family in families:
+        husband_id = family.get('HUSB', '')
+        wife_id = family.get('WIFE', '')
+        children_ids = family.get('CHIL', [])
+
+        for child_id in children_ids:
+            child_birth_date = individuals[int(child_id) - 1].get('BIRTH', {}).get('BDATE', '')
+            mother_birth_date = individuals[int(wife_id) - 1].get('BIRTH', {}).get('BDATE', '')
+            father_birth_date = individuals[int(husband_id) - 1].get('BIRTH', {}).get('BDATE', '')
+
+            if mother_birth_date and child_birth_date:
+                mother_birth_date = datetime.strptime(mother_birth_date, "%d %b %Y")
+                child_birth_date = datetime.strptime(child_birth_date, "%d %b %Y")
+
+                if (mother_birth_date.year - child_birth_date.year) >= 60:
+                    return False
+
+            if father_birth_date and child_birth_date:
+                father_birth_date = datetime.strptime(father_birth_date, "%d %b %Y")
+                child_birth_date = datetime.strptime(child_birth_date, "%d %b %Y")
+
+                if (father_birth_date.year - child_birth_date.year) >= 80:
+                    return False
+
+    return True
+
+class TestUS12(unittest.TestCase):
+    def test_parents_not_too_old(self):
+        # Test with parents not too old, mother is less than 60 years older and father is less than 80 years older than their children
+        individuals = [
+            {
+                'BIRTH': {'BDATE': '01 JAN 1980'},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1985'},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1970'},
+            },
+        ]
+        families = [
+            {
+                'HUSB': '1',
+                'WIFE': '2',
+                'CHIL': ['3'],
+            },
+        ]
+        self.assertTrue(US12(individuals, families))
+
+    def test_mother_too_old(self):
+        # Test with mother too old, mother is more than 60 years older than her child
+        individuals = [
+            {
+                'BIRTH': {'BDATE': '01 JAN 1980'},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1950'},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1970'},
+            },
+        ]
+        families = [
+            {
+                'HUSB': '1',
+                'WIFE': '2',
+                'CHIL': ['3'],
+            },
+        ]
+        self.assertFalse(US12(individuals, families))
+
+    def test_father_too_old(self):
+        # Test with father too old, father is more than 80 years older than his child
+        individuals = [
+            {
+                'BIRTH': {'BDATE': '01 JAN 1980'},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1990'},
+            },
+            {
+                'BIRTH': {'BDATE': '01 JAN 1970'},
+            },
+        ]
+        families = [
+            {
+                'HUSB': '1',
+                'WIFE': '2',
+                'CHIL': ['3'],
+            },
+        ]
+        self.assertFalse(US12(individuals, families))
 '''
 #US04 test
 is_valid = US04(families)
