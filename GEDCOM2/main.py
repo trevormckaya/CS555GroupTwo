@@ -10,7 +10,7 @@ families = []
 currIndividual = {}
 currFamily = {}
 
-path = '/Users/trevormckay/Documents/GitHub/CS555GroupTwo/GEDCOM2/GEDCOMTestFile'
+path = 'GEDCOMTestFile'
 
 
 with open(path, "r") as file:
@@ -109,6 +109,78 @@ def is_marriage_after_14(individuals, families):
                     return False
 
     return True
+
+def list_deceased_individuals(individuals):
+    deceased_individuals = []
+    for individual in individuals:
+        death_date = individual.get('DEATH', {}).get('DDATE', '')
+        if death_date:
+            deceased_individuals.append(individual)
+    return deceased_individuals
+
+def list_living_married_individuals(individuals, families):
+    living_married_list = []
+    for family in families:
+        husband_id = family.get('HUSB', None)
+        wife_id = family.get('WIFE', None)
+        marriage_date = family.get('MARR', None)
+
+        if husband_id and wife_id and marriage_date:
+            husband_index = int(husband_id[2:-1]) - 1
+            wife_index = int(wife_id[2:-1]) - 1
+
+            husband = individuals[husband_index] if 0 <= husband_index < len(individuals) else None
+            wife = individuals[wife_index] if 0 <= wife_index < len(individuals) else None
+
+            if husband and wife and 'DEAT' not in husband and 'DEAT' not in wife:
+                living_married_list.append(husband)
+                living_married_list.append(wife)
+
+    return living_married_list
+
+# Print the list of deceased individuals
+deceased_list = list_deceased_individuals(individuals)
+print("\nDeceased Individuals:")
+for individual in deceased_list:
+    print(individual)
+
+# Print the list of living married individuals
+living_married_list = list_living_married_individuals(individuals, families)
+print("\nLiving Married Individuals:")
+for individual in living_married_list:
+    print(individual)
+
+
+def test_list_deceased_individuals():
+    individuals = [
+        {'ID': '1', 'NAME': 'John Doe', 'DEATH': {'DDATE': '2022-01-01'}},
+        {'ID': '2', 'NAME': 'Jane Doe'},
+        # Add more individuals as needed
+    ]
+
+    deceased_list = list_deceased_individuals(individuals)
+    assert len(deceased_list) == 1
+    assert deceased_list[0]['NAME'] == 'John Doe'
+    # Run the test cases
+    test_list_deceased_individuals()
+
+# Test case for listing living married individuals
+def test_list_living_married_individuals():
+    individuals = [
+        {'ID': '@I1@', 'DEAT': '2000-01-01'},
+        {'ID': '@I2@'},
+        {'ID': '@I3@'},
+    ]
+    families = [
+        {'HUSB': '@I2@', 'WIFE': '@I3@', 'MARR': '1990-01-01'},
+    ]
+
+    living_married_list = list_living_married_individuals(individuals, families)
+    assert len(living_married_list) == 2
+
+test_list_living_married_individuals()
+
+
 
 class TestIsMarriageAfter14(unittest.TestCase):
     def setUp(self):
