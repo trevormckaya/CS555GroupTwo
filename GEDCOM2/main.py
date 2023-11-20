@@ -839,5 +839,100 @@ class TestUS08CheckBirthBeforeMarriage(unittest.TestCase):
         # Test cases with birth after marriage
         self.assertFalse(US08_check_birth_before_marriage([self.family2], individuals))
 
+def is_correct_gender_roles(individuals, families):
+    for family in families:
+        husband_id = family.get('HUSB', '')
+        wife_id = family.get('WIFE', '')
+
+        if husband_id:
+            husband = individuals[int(husband_id) - 1]
+            if 'SEX' in husband and husband['SEX'] != 'M':
+                return False
+
+        if wife_id:
+            wife = individuals[int(wife_id) - 1]
+            if 'SEX' in wife and wife['SEX'] != 'F':
+                return False
+
+    return True
+
+class TestCorrectGenderRoles(unittest.TestCase):
+    def setUp(self):
+        self.individuals = [
+            {'ID': '1', 'SEX': 'M'},
+            {'ID': '2', 'SEX': 'F'},
+            {'ID': '3', 'SEX': 'M'},
+        ]
+        self.families = [
+            {'HUSB': '1', 'WIFE': '2'},
+            {'HUSB': '3', 'WIFE': '2'},
+        ]
+
+    def test_correct_gender_roles(self):
+        self.assertTrue(is_correct_gender_roles(self.individuals, self.families))
+
+    def test_incorrect_gender_roles(self):
+        # Intentionally set incorrect gender roles
+        self.individuals[0]['SEX'] = 'F'
+        self.assertFalse(is_correct_gender_roles(self.individuals, self.families))
+
+        # Reset gender for the next test case
+        self.individuals[0]['SEX'] = 'M'
+
+        # Intentionally set incorrect gender roles
+        self.individuals[1]['SEX'] = 'M'
+        self.assertFalse(is_correct_gender_roles(self.individuals, self.families))
+
+def are_all_ids_unique(individuals, families):
+    all_ids = set()
+    
+
+    for individual in individuals:
+        individual_id = individual.get('ID', '')
+        if individual_id in all_ids:
+            return False
+        all_ids.add(individual_id)
+
+    # Check family IDs
+    for family in families:
+        family_id = family.get('FAM', '')
+        if family_id in all_ids:
+            return False
+        all_ids.add(family_id)
+
+    return True
+
+class TestUniqueIDs(unittest.TestCase):
+    def setUp(self):
+        self.individuals = [
+            {'ID': 'I1'},
+            {'ID': 'I2'},
+            {'ID': 'I3'},
+        ]
+        self.families = [
+            {'FAM': 'F1'},
+            {'FAM': 'F2'},
+            {'FAM': 'F3'},
+        ]
+
+    def test_unique_ids(self):
+        self.assertTrue(are_all_ids_unique(self.individuals, self.families))
+
+    def test_non_unique_individual_ids(self):
+        # Intentionally set non-unique individual IDs
+        self.individuals[1]['ID'] = 'I1'
+        self.assertFalse(are_all_ids_unique(self.individuals, self.families))
+
+        # Reset IDs for the next test case
+        self.individuals[1]['ID'] = 'I2'
+
+    def test_non_unique_family_ids(self):
+        # Intentionally set non-unique family IDs
+        self.families[2]['FAM'] = 'F1'
+        self.assertFalse(are_all_ids_unique(self.individuals, self.families))
+
+        # Reset IDs for the next test case
+        self.families[2]['FAM'] = 'F3'
+
 if __name__ == '__main__':
     unittest.main()
